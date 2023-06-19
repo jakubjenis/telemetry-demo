@@ -1,0 +1,127 @@
+version: "3.9"
+
+services:
+  webapi:
+    container_name: webapi
+    hostname: webapi
+    ports:
+      - 5069:80
+    build:
+      context: .
+      dockerfile: ./src/WebApi/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__OrdersDb=Server=ordersdb;Port=5432;Database=orders;User Id=postuser;Password=example
+      - OpenTelemetry_Jaeger_Host=jaeger
+      - OpenTelemetry_Jaeger_Port=6831
+    depends_on:
+      - jaeger
+      - webapidb
+
+  webapidb:
+    container_name: webapidb
+    hostname: webapidb
+    image: 'postgres:latest'
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: postuser
+      POSTGRES_DB: orders
+    # volumes: 
+    #   - orders_data:/var/lib/postgresql/data
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    hostname: jaeger
+    container_name: jaeger
+    ports:
+      - "6831:6831/udp" # accepts jaeger.thrift over compact thrift protocol
+      - "16686:16686" # ui
+      # for more ports and information, check https://www.jaegertracing.io/docs/1.26/getting-started/
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #   ports:
+  #     - 9090:9090
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+  #     - prom_data:/prometheus
+
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   ports:
+  #     - 3000:3000
+  #   restart: unless-stopped
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=grafana
+  #   volumes:
+  #     - ./grafana/datasource:/etc/grafana/provisioning/datasources
+  #     - ./grafana/dashboard/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+  #     - ./grafana/dashboards:/var/lib/grafana/dashboards
+
+volumes:
+  prom_data:
+  orders_data:
+
+# sqlserver:
+#   image: mcr.microsoft.com/mssql/server:2019-latest
+#   hostname: sqlserver
+#   ports:
+#     - "1433:1433"
+#   environment:
+#     SA_PASSWORD: Password1
+#     ACCEPT_EULA: "Y"
+# azuresql:
+#   image: mcr.microsoft.com/azure-sql-edge:latest
+#   hostname: azuresql
+#   ports:
+#     - "1444:1433"
+#   environment:
+#     SA_PASSWORD: Password1
+#     ACCEPT_EULA: "Y"
+# mysql:
+#   image: mysql:latest
+#   command: --default-authentication-plugin=mysql_native_password
+#   restart: always
+#   ports:
+#     - 3306:3306
+#   environment:
+#     MYSQL_ROOT_PASSWORD: Password1
+#     MYSQL_DATABASE: words
+#     MYSQL_USER: user
+#     MYSQL_PASSWORD: Password1
+# rabbitmq:
+#   image: rabbitmq:3-management-alpine
+#   hostname: rabbitmq
+#   container_name: rabbitmq
+#   ports:
+#     - "5672:5672" # rabbit itself
+#     - "15672:15672" # management ui
+# orders:
+  # container_name: orders
+  # hostname: orders
+  # ports:
+  #   - 5000:8080
+  # build:
+  #   context: .
+  #   dockerfile: ./ContosoOnline/Orders/Dockerfile
+  # environment:
+  #   - ASPNETCORE_ENVIRONMENT=Development
+  #   - ZIPKIN_URL=http://zipkin:9411
+  #   - ConnectionStrings__OrdersDb=Server=ordersdb;Port=5432;Database=orders;User Id=postuser;Password=example
+  # depends_on:
+  #   - prometheus
+  #   - zipkin
+  #   - ordersdb
+# zipkin:
+#   image: openzipkin/zipkin
+#   ports:
+#     - 9411:9411
+  
